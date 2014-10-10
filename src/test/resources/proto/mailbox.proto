@@ -1,0 +1,19 @@
+package mailbox.entity;
+
+message Mail {
+	required string id = 1;
+	required string fromChannelUserId = 2;
+	required int32 type = 3;
+	required int32 attachment = 4;
+	required int32 quantity = 5;
+	required int64 sent = 6;
+	required int64 expiring = 7;
+}
+
+message MailBox {
+	repeated Mail mails = 1;
+}
+
+message MailBoxList {
+	repeated string mailBoxKeys = 1;
+}

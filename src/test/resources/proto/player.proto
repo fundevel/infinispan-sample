@@ -1,0 +1,29 @@
+package player.entity;
+
+message Character {
+	required string id = 1;
+	required int32 type = 2;
+	required int32 level = 3;
+	required int64 exp = 4;
+	required int32 weapon = 5;
+	required int32 armor = 6;
+	required int32 accessory = 7;
+	required int32 force = 8;
+}
+
+message Team {
+	required int32 teamNo = 1;
+	repeated string characterIds = 2;
+	required int32 formation = 3;
+}
+
+message Player {
+	required int32 cash = 1;
+	required int32 ticket = 2;
+	required int32 point = 3;
+	required int32 level = 4;
+	required int64 exp = 5;
+	required string leaderCharacterId = 6;
+	repeated Character characters = 7;
+	repeated Team teams = 8;
+}
