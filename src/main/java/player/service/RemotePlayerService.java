@@ -6,15 +6,16 @@ package player.service;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 
+import mailbox.exception.AlreadyCreatedException;
+import mailbox.exception.NotFoundException;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.VersionedValue;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 import player.entity.Character;
 import player.entity.Player;
 import player.entity.Team;
-
-import common.exception.AlreadyCreatedException;
-import common.exception.NotFoundException;
 
 /**
  * @author seoi
@@ -105,6 +106,11 @@ public class RemotePlayerService implements PlayerService {
         return player;
     }
 
+    @Override
+    public NotifyingFuture<Player> asyncGetPlayer(String me) {
+        return playerCache.getAsync(generatePlayerKey(me));
+    }
+
     /*
      * (non-Javadoc)
      * @see net.netmarble.m.runningmon.service.player.PlayerService#getVersionedPlayer(java.lang.String)
@@ -135,4 +141,5 @@ public class RemotePlayerService implements PlayerService {
         }
 
     }
+
 }

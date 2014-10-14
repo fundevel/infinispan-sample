@@ -16,12 +16,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import mailbox.exception.NotFoundException;
+
 import org.apache.commons.lang.RandomStringUtils;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.protostream.SerializationContext;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -35,8 +38,6 @@ import player.marshaller.PlayerMarshaller;
 import player.marshaller.TeamMarshaller;
 import player.service.PlayerService;
 import player.service.RemotePlayerService;
-
-import common.exception.NotFoundException;
 
 /**
  * @author seoi
@@ -128,6 +129,17 @@ public class PlayerTest {
     public void testGetPlayer() throws InterruptedException, NotFoundException {
         Player player = playerService.getPlayer(ME);
         assertNotNull(player);
+    }
+
+    @Test
+    public void testAsyncGetPlayer() throws InterruptedException, ExecutionException {
+        NotifyingFuture<Player> asyncGetPlayer = playerService.asyncGetPlayer(ME);
+
+        while (!asyncGetPlayer.isDone()) {
+            System.out.println("asyncGet은 역시 blocking이 안되는걸? 이 시간에 뭔가 다른 로직 처리할 수 있는 여유...");
+        }
+
+        assertNotNull(asyncGetPlayer.get());
     }
 
     /**

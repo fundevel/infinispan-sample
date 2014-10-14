@@ -27,7 +27,7 @@ import mailbox.entity.MailBoxList;
 import mailbox.marshaller.MailBoxListMarshaller;
 import mailbox.marshaller.MailBoxMarshaller;
 import mailbox.marshaller.MailMarshaller;
-import mailbox.service.remote.RemoteOrderedMailBoxService;
+import mailbox.service.RemoteOrderedMailBoxService;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;

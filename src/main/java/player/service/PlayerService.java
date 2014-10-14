@@ -2,12 +2,13 @@ package player.service;
 
 import java.util.ConcurrentModificationException;
 
+import mailbox.exception.AlreadyCreatedException;
+import mailbox.exception.NotFoundException;
+
 import org.infinispan.client.hotrod.VersionedValue;
+import org.infinispan.commons.util.concurrent.NotifyingFuture;
 
 import player.entity.Player;
-
-import common.exception.AlreadyCreatedException;
-import common.exception.NotFoundException;
 
 public interface PlayerService {
 
@@ -28,6 +29,14 @@ public interface PlayerService {
      * @throws NotFoundException
      */
     public Player getPlayer(String me) throws NotFoundException;
+
+    /**
+     * 나의 Player 정보를 비동기로 가지고온다. Future를 가지고 온다.
+     * 
+     * @param me
+     * @return
+     */
+    public NotifyingFuture<Player> asyncGetPlayer(String me);
 
     /**
      * CompareAndSet 동작을 위해 Player의 VersionedValue를 가지고 온다. VersionedValue에는 version과 value가 있다.

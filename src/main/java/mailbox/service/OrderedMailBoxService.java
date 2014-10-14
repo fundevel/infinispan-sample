@@ -4,8 +4,7 @@ import java.util.List;
 
 import mailbox.entity.Mail;
 import mailbox.entity.MailBox;
-
-import common.exception.NotFoundException;
+import mailbox.exception.NotFoundException;
 
 /**
  * @author seoi

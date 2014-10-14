@@ -1,7 +1,7 @@
 /**
  * 
  */
-package common.exception;
+package mailbox.exception;
 
 /**
  * @author seoi

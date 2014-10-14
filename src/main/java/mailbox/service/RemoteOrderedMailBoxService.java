@@ -1,38 +1,37 @@
 /**
  * 
  */
-package mailbox.service.local;
+package mailbox.service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import mailbox.entity.Mail;
 import mailbox.entity.MailBox;
 import mailbox.entity.MailBoxList;
-import mailbox.service.OrderedMailBoxService;
+import mailbox.exception.NotFoundException;
 
-import org.infinispan.Cache;
-import org.jgroups.util.UUID;
-
-import common.exception.NotFoundException;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.VersionedValue;
 
 /**
  * @author seoi
  */
-public class LocalOrderedMailBoxService implements OrderedMailBoxService {
+public class RemoteOrderedMailBoxService implements OrderedMailBoxService {
 
     private final static String MAILBOX_LIST_KEY_PREFIX = "MBL_";
     private final static String MAILBOX_KEY_PREFIX = "MB_";
 
-    private Cache<String, MailBoxList> mailBoxListCache = null;
-    private Cache<String, MailBox> mailBoxCache = null;
+    private RemoteCache<String, MailBoxList> mailBoxListCache = null;
+    private RemoteCache<String, MailBox> mailBoxCache = null;
 
     private final int maximumMailBoxSize;
 
-    public LocalOrderedMailBoxService(Cache<String, MailBoxList> mailBoxListCache, Cache<String, MailBox> mailBoxCache, int maximumMailBoxSize) {
+    public RemoteOrderedMailBoxService(RemoteCache<String, MailBoxList> mailBoxListCache, RemoteCache<String, MailBox> mailBoxCache, int maximumMailBoxSize) {
         super();
         this.mailBoxListCache = mailBoxListCache;
         this.mailBoxCache = mailBoxCache;
@@ -82,25 +81,26 @@ public class LocalOrderedMailBoxService implements OrderedMailBoxService {
 
         String mailBoxListKey = generateMailBoxListKey(me);
 
-        MailBoxList oldMailBoxList = mailBoxListCache.get(mailBoxListKey);
-        MailBoxList newMailBoxList = oldMailBoxList;
+        VersionedValue<MailBoxList> mailBoxListVersioned = mailBoxListCache.getVersioned(mailBoxListKey);
 
-        Iterator<String> mailBoxKeysIterator = newMailBoxList.getMailBoxKeys().iterator();
+        MailBoxList mailBoxList = mailBoxListVersioned.getValue();
+        Iterator<String> mailBoxKeysIterator = mailBoxList.getMailBoxKeys().iterator();
 
         while (mailBoxKeysIterator.hasNext()) {
             String mailBoxKey = mailBoxKeysIterator.next();
+            VersionedValue<MailBox> mailBoxVersioned = mailBoxCache.getVersioned(mailBoxKey);
 
-            MailBox oldMailBox = mailBoxCache.get(mailBoxKey);
-
-            if (oldMailBox == null) {
+            //mailbox가 null이면 mailbox key list 에서 key를 지워줘야 한다.
+            if (mailBoxVersioned == null) {
                 mailBoxKeysIterator.remove();
 
-                mailBoxListCache.replace(mailBoxListKey, oldMailBoxList, newMailBoxList);
+                //실패해도 괜찮음 언젠가 지워지기만 하면 됨
+                mailBoxListCache.replaceWithVersion(mailBoxListKey, mailBoxList, mailBoxListVersioned.getVersion());
                 continue;
             }
 
-            MailBox newMailBox = oldMailBox;
-            List<Mail> mails = newMailBox.getMails();
+            MailBox mailBox = mailBoxVersioned.getValue();
+            List<Mail> mails = mailBox.getMails();
 
             Iterator<Mail> iterator = mails.iterator();
 
@@ -109,7 +109,7 @@ public class LocalOrderedMailBoxService implements OrderedMailBoxService {
 
                 if (mail.getId().equals(mailId)) {
                     iterator.remove();
-                    boolean isRemoved = mailBoxCache.replace(mailBoxKey, oldMailBox, newMailBox);
+                    boolean isRemoved = mailBoxCache.replaceWithVersion(mailBoxKey, mailBox, mailBoxVersioned.getVersion());
                     if (isRemoved) {
                         return mail;
                     } else {
@@ -127,18 +127,19 @@ public class LocalOrderedMailBoxService implements OrderedMailBoxService {
 
         String mailBoxListKey = generateMailBoxListKey(receiver);
 
-        MailBoxList oldMailBoxList = mailBoxListCache.get(mailBoxListKey);
-        MailBoxList newMailBoxList = oldMailBoxList;
+        VersionedValue<MailBoxList> mailBoxListVersioned = mailBoxListCache.getVersioned(mailBoxListKey);
 
-        List<String> mailBoxKeys = newMailBoxList.getMailBoxKeys();
+        MailBoxList mailBoxList = mailBoxListVersioned.getValue();
+        List<String> mailBoxKeys = mailBoxList.getMailBoxKeys();
 
         //MailBoxKey 들 중 제일 마지막 key를 가지고 온다. 없는 경우는 없음(계정생성 때 create 해줌)
         String lastMailBoxKey = mailBoxKeys.get(mailBoxKeys.size() - 1);
 
-        MailBox oldMailBox = mailBoxCache.get(lastMailBoxKey);
-        MailBox newMailBox = oldMailBox;
+        VersionedValue<MailBox> mailBoxVersioned = mailBoxCache.getVersioned(lastMailBoxKey);
 
-        if (newMailBox.getMails().size() >= maximumMailBoxSize) {
+        MailBox mailBox = mailBoxVersioned.getValue();
+
+        if (mailBox.getMails().size() >= maximumMailBoxSize) {
 
             // MailBox 버켓이 감당할 수 있는 사이즈를 넘었으므로 새로운 버켓 생성
             String newMailBoxKey = newMailBoxKey(receiver);
@@ -146,18 +147,19 @@ public class LocalOrderedMailBoxService implements OrderedMailBoxService {
             mailBoxKeys.add(newMailBoxKey);
 
             //mailbox key add 하는 cas 연산 실패했을 때 미리 만들어 둔 mailBox는 지워야 함 그 사이에 다른 요청으로 이 메일 mailbox에 접근은 불가
-            mailBoxCache.put(newMailBoxKey, new MailBox(mail));
+            MailBox newMailBox = new MailBox(mail);
+            mailBoxCache.put(newMailBoxKey, newMailBox);
 
-            boolean isAddedNewMailBoxKey = mailBoxListCache.replace(mailBoxListKey, oldMailBoxList, newMailBoxList);
+            boolean isAddedNewMailBoxKey = mailBoxListCache.replaceWithVersion(mailBoxListKey, mailBoxList, mailBoxListVersioned.getVersion());
             if (isAddedNewMailBoxKey == false) {
                 // MailBoxList에 Key add 하는 작업이 실패했으므로, 만들어뒀던 MailBox도 제거. uuid가 unique 하므로 경쟁상태는 없음
                 mailBoxCache.remove(newMailBoxKey);
+                // MailBoxList에 새로운 Key 추가가 실패하면 Throw. 경우에 따라 루프를 통한 retry도 가능
                 throw new ConcurrentModificationException();
             }
-
         } else {
-            newMailBox.getMails().add(mail);
-            boolean isAddedMailBox = mailBoxCache.replace(lastMailBoxKey, oldMailBox, newMailBox);
+            mailBox.getMails().add(mail);
+            boolean isAddedMailBox = mailBoxCache.replaceWithVersion(lastMailBoxKey, mailBox, mailBoxVersioned.getVersion());
             if (!isAddedMailBox) {
                 throw new ConcurrentModificationException();
             }
@@ -173,20 +175,25 @@ public class LocalOrderedMailBoxService implements OrderedMailBoxService {
 
         List<Mail> mails = new ArrayList<>();
 
-        MailBoxList oldMailBoxList = mailBoxListCache.get(mailBoxListKey);
-        MailBoxList newMailBoxList = oldMailBoxList;
-        Iterator<String> mailBoxKeysIterator = newMailBoxList.getMailBoxKeys().iterator();
+        VersionedValue<MailBoxList> mailBoxListVersioned = mailBoxListCache.getVersioned(mailBoxListKey);
+
+        MailBoxList mailBoxList = mailBoxListVersioned.getValue();
+        Iterator<String> mailBoxKeysIterator = mailBoxList.getMailBoxKeys().iterator();
 
         while (mailBoxKeysIterator.hasNext()) {
             String mailBoxKey = mailBoxKeysIterator.next();
+            VersionedValue<MailBox> mailBoxVersioned = mailBoxCache.getVersioned(mailBoxKey);
 
-            MailBox mailBox = mailBoxCache.get(mailBoxKey);
-            if (mailBox == null) {
+            //mailbox가 null이면 mailbox key list 에서 key를 지워줘야 한다.
+            if (mailBoxVersioned == null) {
                 mailBoxKeysIterator.remove();
 
-                mailBoxListCache.replace(mailBoxListKey, oldMailBoxList, newMailBoxList);
+                //실패해도 괜찮음 언젠가 지워지기만 하면 됨
+                mailBoxListCache.replaceWithVersion(mailBoxListKey, mailBoxList, mailBoxListVersioned.getVersion());
                 continue;
             }
+
+            MailBox mailBox = mailBoxVersioned.getValue();
 
             Iterator<Mail> mailBoxIterator = mailBox.getMails().iterator();
 
