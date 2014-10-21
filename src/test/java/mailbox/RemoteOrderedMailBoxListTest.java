@@ -245,9 +245,6 @@ public class RemoteOrderedMailBoxListTest {
             f.get();
         }
 
-        //        System.out.println(remoteOrderedMailBoxService.getMails(SOMEONE));
-        //        System.out.println(remoteOrderedMailBoxService.getMailBoxes(SOMEONE));
-
         assertEquals(NUMBER_OF_MAIL, remoteOrderedMailBoxService.getMails(SOMEONE).size());
         assertEquals((int) Math.ceil((float) NUMBER_OF_MAIL / (float) CAPACITY_OF_BUCKET), remoteOrderedMailBoxService.getMailBoxes(SOMEONE).size());
     }
