@@ -36,7 +36,7 @@ public interface PlayerService {
      * @param me
      * @return
      */
-    public NotifyingFuture<Player> asyncGetPlayer(String me);
+    public NotifyingFuture<Player> asyncGetPlayer(String me) throws NotFoundException;
 
     /**
      * CompareAndSet 동작을 위해 Player의 VersionedValue를 가지고 온다. VersionedValue에는 version과 value가 있다.

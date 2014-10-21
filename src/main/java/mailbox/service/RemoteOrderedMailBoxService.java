@@ -77,7 +77,7 @@ public class RemoteOrderedMailBoxService implements OrderedMailBoxService {
     }
 
     @Override
-    public Mail readOne(String me, String mailId) throws NotFoundException {
+    public Mail readOne(String me, String mailId) throws NotFoundException, ConcurrentModificationException {
 
         String mailBoxListKey = generateMailBoxListKey(me);
 
@@ -123,7 +123,7 @@ public class RemoteOrderedMailBoxService implements OrderedMailBoxService {
     }
 
     @Override
-    public Mail send(String receiver, Mail mail) {
+    public Mail send(String receiver, Mail mail) throws ConcurrentModificationException {
 
         String mailBoxListKey = generateMailBoxListKey(receiver);
 
