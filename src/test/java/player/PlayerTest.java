@@ -24,6 +24,7 @@ import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.util.concurrent.FutureListener;
 import org.infinispan.commons.util.concurrent.NotifyingFuture;
 import org.infinispan.protostream.SerializationContext;
 import org.junit.After;
@@ -134,12 +135,34 @@ public class PlayerTest {
     @Test
     public void testAsyncGetPlayer() throws InterruptedException, ExecutionException {
         NotifyingFuture<Player> asyncGetPlayer = playerService.asyncGetPlayer(ME);
+		
+        FutureListener<Player> listener = new FutureListener<Player>() {
+			
+			@Override
+			public void futureDone(Future<Player> future) {
+				
+				try {
+					System.out.println(future.get().toString());
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+				}
+				System.out.println("asyncGetPlayer가 완료 되었음");
+			}
+		};
 
+		asyncGetPlayer.attachListener(listener);
+		
         while (!asyncGetPlayer.isDone()) {
             System.out.println("asyncGet은 역시 blocking이 안되는걸? 이 시간에 뭔가 다른 로직 처리할 수 있는 여유...");
         }
 
-        assertNotNull(asyncGetPlayer.get());
+        Player player = asyncGetPlayer.get();
+        
+        Thread.sleep(1000);	// FutureDone 제대로 동작할 시간이 필요
+        
+        assertNotNull(player);
     }
 
     /**
