@@ -43,7 +43,7 @@ import player.service.RemotePlayerService;
 /**
  * @author seoi
  */
-public class PlayerTest {
+public class RemotePlayerTest {
 
     private static final String REMOTE_INFINISPAN_SERVER_IP = "10.100.23.230:11222";
 
@@ -62,7 +62,7 @@ public class PlayerTest {
     public static void setUpBeforeClass() throws Exception {
 
         //Log4j 설정
-        String logConfigurationFile = PlayerTest.class.getClassLoader().getResource("log4j2.xml").getPath();
+        String logConfigurationFile = RemotePlayerTest.class.getClassLoader().getResource("log4j2.xml").getPath();
         System.setProperty("log4j.configurationFile", logConfigurationFile);
 
         //Infinispan 관련 설정
