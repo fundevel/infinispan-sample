@@ -1,27 +1,0 @@
-
-½
-%src/test/resources/proto/player.protoplayer.entity"‚
-	Character
-
-id (	
-type (
-level (
-exp (
-weapon (
-armor (
-	accessory (
-force ("?
-Team
-teamNo (
-characterIds (	
-	formation ("¾
-Player
-cash (
-ticket (
-point (
-level (
-exp (
-leaderCharacterId (	,
-
-characters (2.player.entity.Character"
-teams (2.player.entity.Team
