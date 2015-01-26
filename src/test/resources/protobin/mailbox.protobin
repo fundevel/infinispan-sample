@@ -1,17 +1,0 @@
-
-ê
-&src/test/resources/proto/mailbox.protomailbox.entity"Å
-Mail
-
-id (	
-fromChannelUserId (	
-type (
-
-attachment (
-quantity (
-sent (
-expiring (".
-MailBox#
-mails (2.mailbox.entity.Mail""
-MailBoxList
-mailBoxKeys (	

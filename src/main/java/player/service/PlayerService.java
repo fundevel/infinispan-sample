@@ -19,7 +19,7 @@ public interface PlayerService {
      * @return
      * @throws AlreadyCreatedException
      */
-    public Player createPlayer(String me) throws AlreadyCreatedException;
+    Player createPlayer(String me) throws AlreadyCreatedException;
 
     /**
      * 나의 Player 정보를 가지고 온다.
@@ -28,7 +28,7 @@ public interface PlayerService {
      * @return
      * @throws NotFoundException
      */
-    public Player getPlayer(String me) throws NotFoundException;
+    Player getPlayer(String me) throws NotFoundException;
 
     /**
      * 나의 Player 정보를 비동기로 가지고온다. Future를 가지고 온다.
@@ -36,7 +36,7 @@ public interface PlayerService {
      * @param me
      * @return
      */
-    public NotifyingFuture<Player> asyncGetPlayer(String me);
+    NotifyingFuture<Player> asyncGetPlayer(String me) throws NotFoundException;
 
     /**
      * CompareAndSet 동작을 위해 Player의 VersionedValue를 가지고 온다. VersionedValue에는 version과 value가 있다.
@@ -46,7 +46,7 @@ public interface PlayerService {
      * @return
      * @throws NotFoundException
      */
-    public VersionedValue<Player> getVersionedPlayer(String me) throws NotFoundException;
+    VersionedValue<Player> getVersionedPlayer(String me) throws NotFoundException;
 
     /**
      * CompareAndSet 연산으로 newPlayer의 값을 레파지토리에 저장한다.
@@ -58,6 +58,6 @@ public interface PlayerService {
      * @return
      * @throws ConcurrentModificationException
      */
-    public Player compareAndSave(String me, Player newPlayer, long version) throws ConcurrentModificationException;
+    Player compareAndSave(String me, Player newPlayer, long version) throws ConcurrentModificationException;
 
 }

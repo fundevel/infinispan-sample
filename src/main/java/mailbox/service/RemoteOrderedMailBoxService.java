@@ -72,6 +72,8 @@ public class RemoteOrderedMailBoxService implements OrderedMailBoxService {
     @Override
     public void createMailBox(String me) {
         String newMailBoxKey = newMailBoxKey(me);
+        
+        // UUID 가 충분히 Unique 하기 때문에 putIfAbsent로 검증할 필요는 없음
         mailBoxListCache.put(generateMailBoxListKey(me), new MailBoxList(newMailBoxKey));
         mailBoxCache.put(newMailBoxKey, new MailBox());
     }
