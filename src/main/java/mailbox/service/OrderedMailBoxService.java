@@ -1,5 +1,6 @@
 package mailbox.service;
 
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import mailbox.entity.Mail;
@@ -30,7 +31,7 @@ public interface OrderedMailBoxService {
      * @return mailId에 대한 Mail
      * @throws NotFoundException
      */
-    Mail readOne(String me, String mailId) throws NotFoundException;
+    Mail readOne(String me, String mailId) throws NotFoundException, ConcurrentModificationException;
 
     /**
      * 메일을 받을 사람의 MailBoxList를 가지고 온 후, 그 사람의 메일 박스에서 마지막 메일 박스를 가지고 온다.
@@ -42,7 +43,7 @@ public interface OrderedMailBoxService {
      * @param mail
      * @return
      */
-    Mail send(String receiver, Mail mail);
+    Mail send(String receiver, Mail mail) throws ConcurrentModificationException;
 
     /**
      * MailBoxList에 있는 키리스트를 이용해 그 키에 해당 하는 MailBox를 루프를 돌면서 가지고 온 후 ,
